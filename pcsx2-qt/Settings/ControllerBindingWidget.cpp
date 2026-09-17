@@ -3,9 +3,12 @@
 
 #include <QtCore/QDir>
 #include <QtWidgets/QInputDialog>
+#include <QtWidgets/QGridLayout>
+#include <QtWidgets/QGroupBox>
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QScrollArea>
+#include <QtWidgets/QVBoxLayout>
 #include <algorithm>
 #include <array>
 #include "fmt/format.h"
@@ -127,6 +130,10 @@ void ControllerBindingWidget::onTypeChanged()
 	else if (cinfo->type == Pad::ControllerType::Guitar)
 	{
 		m_bindings_widget = ControllerBindingWidget_Guitar::createInstance(this);
+	}
+	else if (cinfo->type == Pad::ControllerType::GuitarFreaks)
+	{
+		m_bindings_widget = ControllerBindingWidget_GuitarFreaks::createInstance(this);
 	}
 	else if (cinfo->type == Pad::ControllerType::Jogcon)
 	{
@@ -946,6 +953,39 @@ QIcon ControllerBindingWidget_Guitar::getIcon() const
 ControllerBindingWidget_Base* ControllerBindingWidget_Guitar::createInstance(ControllerBindingWidget* parent)
 {
 	return new ControllerBindingWidget_Guitar(parent);
+}
+
+ControllerBindingWidget_GuitarFreaks::ControllerBindingWidget_GuitarFreaks(ControllerBindingWidget* parent)
+	: ControllerBindingWidget_Base(parent)
+{
+	const Pad::ControllerInfo* cinfo = Pad::GetControllerInfo(getControllerType());
+	if (!cinfo)
+		return;
+
+	QGridLayout* layout = new QGridLayout(this);
+	SettingsInterface* sif = getDialog()->getProfileSettingsInterface();
+	const std::string& section = getConfigSection();
+
+	for (size_t i = 0; i < cinfo->bindings.size(); i++)
+	{
+		const InputBindingInfo& bi = cinfo->bindings[i];
+		QGroupBox* group = new QGroupBox(qApp->translate("Pad", bi.display_name), this);
+		QVBoxLayout* group_layout = new QVBoxLayout(group);
+		group_layout->addWidget(new InputBindingWidget(group, sif, bi.bind_type, section, bi.name));
+		layout->addWidget(group, static_cast<int>(i / 4), static_cast<int>(i % 4));
+	}
+}
+
+ControllerBindingWidget_GuitarFreaks::~ControllerBindingWidget_GuitarFreaks() = default;
+
+QIcon ControllerBindingWidget_GuitarFreaks::getIcon() const
+{
+	return QIcon::fromTheme("guitar-line");
+}
+
+ControllerBindingWidget_Base* ControllerBindingWidget_GuitarFreaks::createInstance(ControllerBindingWidget* parent)
+{
+	return new ControllerBindingWidget_GuitarFreaks(parent);
 }
 
 ControllerBindingWidget_Jogcon::ControllerBindingWidget_Jogcon(ControllerBindingWidget* parent)
